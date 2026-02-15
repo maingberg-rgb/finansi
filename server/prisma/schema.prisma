@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id           Int        @id @default(autoincrement())
+  name         String
+  type         String     // "income" | "expense"
+  parentId     Int?
+  weeklyBudget Float?
+  parent       Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  subCategories Category[] @relation("SubCategories")
+  transactions Transaction[]
+  fixedExpenses FixedExpense[]
+}
+
+model Transaction {
+  id                  Int      @id @default(autoincrement())
+  amount              Float
+  description         String?
+  date                DateTime @default(now())
+  addedBy             String   @default("מערכת")
+  categoryId          Int
+  category            Category @relation(fields: [categoryId], references: [id])
+  totalInstallments   Int?     // Total number of installments (e.g. 12)
+  currentInstallment  Int?     // Which installment is this (e.g. 3 of 12)
+  installmentGroupId  String?  // Groups all installments of the same purchase together
+}
+
+model FixedExpense {
+  id          Int      @id @default(autoincrement())
+  name        String
+  amount      Float
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+}
