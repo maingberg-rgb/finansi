@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: home-finance-app
+    env: node
+    buildCommand: cd client && npm install && npm run build && cd ../server && npm install && npx prisma generate
+    startCommand: cd server && node index.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: NODE_VERSION
+        value: 20

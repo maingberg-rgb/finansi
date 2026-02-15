@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
@@ -23,8 +24,13 @@ initBot(process.env.TELEGRAM_BOT_TOKEN);
 
 // --- API Routes ---
 
+// Health Check for UptimeRobot
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Get all categories
-app.get('/categories', async (req, res) => {
+app.get('/api/categories', async (req, res) => {
   try {
     const categories = await prisma.category.findMany({
       include: { subCategories: true }
@@ -36,7 +42,7 @@ app.get('/categories', async (req, res) => {
 });
 
 // Create category
-app.post('/categories', async (req, res) => {
+app.post('/api/categories', async (req, res) => {
   try {
     const { name, type, parentId } = req.body;
     const category = await prisma.category.create({
@@ -53,7 +59,7 @@ app.post('/categories', async (req, res) => {
 });
 
 // Delete category (Standard)
-app.delete('/categories/:id', async (req, res) => {
+app.delete('/api/categories/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   try {
     const hasSubcats = await prisma.category.findFirst({ where: { parentId: id } });
@@ -71,7 +77,7 @@ app.delete('/categories/:id', async (req, res) => {
 });
 
 // Force Delete Category (Cascading)
-app.delete('/categories/:id/force', async (req, res) => {
+app.delete('/api/categories/:id/force', async (req, res) => {
   const id = parseInt(req.params.id);
   try {
     // 1. Delete all subcategories and their dependencies recursively (simplified here)
@@ -96,7 +102,7 @@ app.delete('/categories/:id/force', async (req, res) => {
 });
 
 // Update Category Budget
-app.put('/categories/:id/budget', async (req, res) => {
+app.put('/api/categories/:id/budget', async (req, res) => {
   const id = parseInt(req.params.id);
   const { weeklyBudget } = req.body;
   try {
@@ -111,7 +117,7 @@ app.put('/categories/:id/budget', async (req, res) => {
 });
 
 // Get transactions
-app.get('/transactions', async (req, res) => {
+app.get('/api/transactions', async (req, res) => {
   try {
     const transactions = await prisma.transaction.findMany({
       include: { category: true },
@@ -124,7 +130,7 @@ app.get('/transactions', async (req, res) => {
 });
 
 // Create transaction (supports installments)
-app.post('/transactions', async (req, res) => {
+app.post('/api/transactions', async (req, res) => {
   try {
     const { amount, description, categoryId, date, addedBy, installments } = req.body;
     const numInstallments = parseInt(installments) || 1;
@@ -164,7 +170,7 @@ app.post('/transactions', async (req, res) => {
 });
 
 // Update transaction
-app.put('/transactions/:id', async (req, res) => {
+app.put('/api/transactions/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { amount, description, categoryId, date, addedBy } = req.body;
@@ -186,7 +192,7 @@ app.put('/transactions/:id', async (req, res) => {
 });
 
 // Delete transaction
-app.delete('/transactions/:id', async (req, res) => {
+app.delete('/api/transactions/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.transaction.delete({
@@ -199,7 +205,7 @@ app.delete('/transactions/:id', async (req, res) => {
 });
 
 // Fixed Expenses
-app.get('/fixed-expenses', async (req, res) => {
+app.get('/api/fixed-expenses', async (req, res) => {
   try {
     const fixed = await prisma.fixedExpense.findMany({ include: { category: true } });
     res.json(fixed);
@@ -208,7 +214,7 @@ app.get('/fixed-expenses', async (req, res) => {
   }
 });
 
-app.post('/fixed-expenses', async (req, res) => {
+app.post('/api/fixed-expenses', async (req, res) => {
   try {
     const { name, amount, categoryId } = req.body;
     const fixed = await prisma.fixedExpense.create({
@@ -221,7 +227,7 @@ app.post('/fixed-expenses', async (req, res) => {
   }
 });
 
-app.delete('/fixed-expenses/:id', async (req, res) => {
+app.delete('/api/fixed-expenses/:id', async (req, res) => {
   try {
     await prisma.fixedExpense.delete({ where: { id: parseInt(req.params.id) } });
     res.json({ success: true });
@@ -230,10 +236,11 @@ app.delete('/fixed-expenses/:id', async (req, res) => {
   }
 });
 
-// Catch-all route to log 404s
-app.use((req, res) => {
-  console.log(`${new Date().toISOString()} - 404 NOT FOUND: ${req.method} ${req.url}`);
-  res.status(404).json({ error: `נתיב לא נמצא בשרת: ${req.method} ${req.url}` });
+// Catch-all to serve React App
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 // Start server
