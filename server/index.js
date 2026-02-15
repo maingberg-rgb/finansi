@@ -19,8 +19,21 @@ app.use((req, res, next) => {
 });
 
 // --- Telegram Bot Setup ---
+// --- Telegram Bot Setup ---
 const { initBot } = require('./bot');
-initBot(process.env.TELEGRAM_BOT_TOKEN);
+// Check if running on Vercel
+const isVercel = process.env.VERCEL === '1';
+const bot = initBot(process.env.TELEGRAM_BOT_TOKEN, { polling: !isVercel });
+
+// Webhook route for Telegram (Vercel)
+if (isVercel) {
+  app.post('/api/telegram-webhook', (req, res) => {
+    if (bot) {
+      bot.processUpdate(req.body);
+    }
+    res.sendStatus(200);
+  });
+}
 
 // --- API Routes ---
 
@@ -243,7 +256,11 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Start server (Only if not in Vercel/Serverless environment)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

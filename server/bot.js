@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 // Key: chatId, Value: { step: 'TYPE' | 'CATEGORY' | 'NOTE', amount, type, categoryId, addedBy }
 const sessions = new Map();
 
-function initBot(token) {
+function initBot(token, options = { polling: true }) {
     if (!token) {
         console.log('TELEGRAM_BOT_TOKEN not set, skipping bot init.');
-        return;
+        return null;
     }
 
-    const bot = new TelegramBot(token, { polling: true });
-    console.log('Telegram Bot started with conversational flow...');
+    const bot = new TelegramBot(token, options);
+    console.log(`Telegram Bot started... (polling: ${options.polling})`);
 
     bot.onText(/\/start/, (msg) => {
         bot.sendMessage(msg.chat.id, "שלום! אני בוט הניהול הפיננסי שלך.\nכדי להתחיל, פשוט שלח לי את הסכום של התנועה (למשל: 100).");
@@ -283,6 +283,7 @@ function initBot(token) {
 
         bot.answerCallbackQuery(query.id);
     });
+    return bot;
 }
 
 module.exports = { initBot };
