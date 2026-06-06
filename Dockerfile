@@ -3,7 +3,6 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package files first for caching
-COPY package*.json ./
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/
 
