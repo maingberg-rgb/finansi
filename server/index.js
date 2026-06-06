@@ -27,9 +27,11 @@ const bot = initBot(process.env.TELEGRAM_BOT_TOKEN, { polling: !isVercel });
 
 // Webhook route for Telegram (Vercel)
 if (isVercel) {
-  app.post('/api/telegram-webhook', (req, res) => {
+  app.post('/api/telegram-webhook', async (req, res) => {
     if (bot) {
       bot.processUpdate(req.body);
+      // Wait for async operations (Prisma + Telegram API) to finish before Vercel freezes the function
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
     res.sendStatus(200);
   });

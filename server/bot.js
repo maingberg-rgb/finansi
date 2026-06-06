@@ -136,6 +136,9 @@ function initBot(token, options = { polling: true }) {
             return;
         }
 
+        // Answer the callback to stop the loading spinner on the button
+        bot.answerCallbackQuery(query.id).catch(console.error);
+
         // Handle Type Selection
         if (data.startsWith('type_')) {
             const type = data.split('_')[1];
