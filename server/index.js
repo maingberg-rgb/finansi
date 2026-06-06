@@ -37,10 +37,11 @@ if (isVercel) {
 
 // --- API Routes ---
 
-// Health Check for UptimeRobot
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
+// Health Check for API
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', vercel: isVercel });
 });
+
 
 // Get all categories
 app.get('/api/categories', async (req, res) => {
