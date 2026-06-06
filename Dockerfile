@@ -6,8 +6,8 @@ WORKDIR /app
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/
 
-# Install dependencies
-RUN npm install --prefix server
+# Install dependencies (ignoring scripts so Prisma doesn't run prematurely before code is copied)
+RUN npm install --prefix server --ignore-scripts
 RUN npm install --prefix client
 
 # Copy all source code
