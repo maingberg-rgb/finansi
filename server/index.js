@@ -250,12 +250,14 @@ app.delete('/api/fixed-expenses/:id', async (req, res) => {
   }
 });
 
-// Catch-all to serve React App
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// Catch-all to serve React App (Only in local dev)
+if (!isVercel) {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 // Start server (Only if not in Vercel/Serverless environment)
 if (require.main === module) {
