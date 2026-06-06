@@ -20,14 +20,27 @@ app.use((req, res, next) => {
 
 // --- Telegram Bot Setup ---
 const { initBot } = require('./bot');
-const bot = initBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+const isVercel = process.env.VERCEL === '1';
+const bot = initBot(process.env.TELEGRAM_BOT_TOKEN, { polling: !isVercel });
+
+// Webhook route for Telegram (Vercel)
+if (isVercel) {
+  app.post('/api/telegram-webhook', async (req, res) => {
+    if (bot) {
+      bot.processUpdate(req.body);
+      // Wait for async operations (Prisma + Telegram API) to finish before Vercel freezes the function
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+    res.sendStatus(200);
+  });
+}
 
 
 // --- API Routes ---
 
 // Health Check for API/UptimeRobot
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+  res.status(200).json({ status: 'OK', vercel: isVercel });
 });
 
 
@@ -238,16 +251,20 @@ app.delete('/api/fixed-expenses/:id', async (req, res) => {
   }
 });
 
-// Catch-all to serve React App
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// Catch-all to serve React App (Only in local dev)
+if (!isVercel) {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
