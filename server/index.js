@@ -247,8 +247,11 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  prisma.$connect()
+    .then(() => console.log('Successfully connected to PostgreSQL.'))
+    .catch((err) => console.error('PostgreSQL connection check failed:', err.message));
 });
 
 module.exports = app;
